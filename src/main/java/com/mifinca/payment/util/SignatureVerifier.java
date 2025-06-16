@@ -8,6 +8,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Base64;
 
+@Component
 public class SignatureVerifier {
     @Value("${wompi.integrity-secret}")
     private String integritySecret;

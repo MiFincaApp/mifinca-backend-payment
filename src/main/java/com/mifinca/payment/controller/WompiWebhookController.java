@@ -33,6 +33,18 @@ public class WompiWebhookController {
             }
             String rawBody = rawBodyBuilder.toString();
 
+            //Imprimir datos clave para depurar
+            System.out.println("=== WEBHOOK RECIBIDO ===");
+            System.out.println("Raw Body:");
+            System.out.println(rawBody);
+            System.out.println("Firma recibida:");
+            System.out.println(xSignature);
+
+            // Calcular firma localmente
+            String firmaCalculada = signatureVerifier.generateSignature(rawBody);
+            System.out.println("Firma calculada:");
+            System.out.println(firmaCalculada);
+            
             // Validar firma
             boolean isValid = signatureVerifier.isValid(rawBody, xSignature);
             if (!isValid) {

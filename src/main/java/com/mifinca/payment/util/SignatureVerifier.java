@@ -1,45 +1,69 @@
-
 package com.mifinca.payment.util;
 
-import java.nio.charset.StandardCharsets;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import java.util.Base64;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.Iterator;
 
 @Component
 public class SignatureVerifier {
-    @Value("${wompi.integrity-secret}")
-    private String integritySecret;
 
-    public boolean isValid(String rawBody, String receivedSignature) {
+    @Value("${wompi.event-secret}")
+    private String eventSecret;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    public boolean isValid(String rawBody) {
         try {
-            Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
-            SecretKeySpec secretKey = new SecretKeySpec(integritySecret.getBytes(), "HmacSHA256");
-            sha256_HMAC.init(secretKey);
+            JsonNode root = objectMapper.readTree(rawBody);
 
-            byte[] hashBytes = sha256_HMAC.doFinal(rawBody.getBytes());
-            String calculatedSignature = Base64.getEncoder().encodeToString(hashBytes);
+            // Leer el array de propiedades
+            JsonNode properties = root.at("/signature/properties");
+            StringBuilder concatenated = new StringBuilder();
 
-            return calculatedSignature.equals(receivedSignature);
+            for (JsonNode prop : properties) {
+                // por ejemplo: transaction.status → busca el valor
+                String[] pathParts = prop.asText().split("\\.");
+                JsonNode valueNode = root.get("data");
+                for (String part : pathParts) {
+                    valueNode = valueNode.get(part);
+                }
+                concatenated.append(valueNode.asText());
+            }
+
+            // Concatenar el timestamp
+            String timestamp = root.get("timestamp").asText();
+            concatenated.append(timestamp);
+
+            // Concatenar el event secret
+            concatenated.append(eventSecret);
+
+            // Generar checksum con SHA256
+            String calculatedChecksum = sha256Hex(concatenated.toString());
+
+            // Comparar con el checksum recibido
+            String receivedChecksum = root.at("/signature/checksum").asText();
+
+            return calculatedChecksum.equalsIgnoreCase(receivedChecksum);
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }
-    
-    public String generateSignature(String rawBody) {
-        try {
-            Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
-            SecretKeySpec secretKey = new SecretKeySpec(integritySecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-            sha256_HMAC.init(secretKey);
 
-            byte[] hashBytes = sha256_HMAC.doFinal(rawBody.getBytes(StandardCharsets.UTF_8));
-            return Base64.getEncoder().encodeToString(hashBytes);
-        } catch (Exception e) {
-            throw new RuntimeException("Error generando firma", e);
+    private String sha256Hex(String data) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hash = digest.digest(data.getBytes(StandardCharsets.UTF_8));
+
+        // Convertir a hex string
+        StringBuilder hexString = new StringBuilder();
+        for (byte b : hash) {
+            hexString.append(String.format("%02X", b));
         }
+        return hexString.toString();
     }
-    
 }

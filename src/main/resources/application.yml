@@ -20,6 +20,7 @@ wompi:
     public-key: ${PUBLIC_KEY}
     private-key: ${PRIVATE_KEY}
     integrity-secret: ${INTEGRITY_SECRET}
+    event-secret: ${EVENT_SECRET}
     base-url: ${BASE_URL}
     redirect-url: ${REDIRECT_URL}
     verificar-url: ${VERIFICAR_URL}

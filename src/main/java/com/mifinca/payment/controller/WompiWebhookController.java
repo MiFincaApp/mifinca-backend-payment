@@ -21,8 +21,7 @@ public class WompiWebhookController {
     }
 
     @PostMapping
-    public ResponseEntity<Map<String, Object>> handleWebhook(HttpServletRequest request,
-            @RequestHeader("x-signature") String xSignature) {
+    public ResponseEntity<Map<String, Object>> handleWebhook(HttpServletRequest request) {
         Map<String, Object> response = new HashMap<>();
 
         try {
@@ -37,22 +36,15 @@ public class WompiWebhookController {
             System.out.println("=== WEBHOOK RECIBIDO ===");
             System.out.println("Raw Body:");
             System.out.println(rawBody);
-            System.out.println("Firma recibida:");
-            System.out.println(xSignature);
 
-            String firmaCalculada = signatureVerifier.generateSignature(rawBody);
-            System.out.println("Firma calculada:");
-            System.out.println(firmaCalculada);
-
-            boolean isValid = signatureVerifier.isValid(rawBody, xSignature);
+            boolean isValid = signatureVerifier.isValid(rawBody);
             if (!isValid) {
                 response.put("status", "error");
-                response.put("message", "firma no válida");
-                // Siempre responder 200 para evitar errores en Wompi
+                response.put("message", "firma de evento no válida");
                 return ResponseEntity.ok(response);
             }
 
-            // Aquí podrías procesar el evento (guardar en base de datos, etc.)
+            // Aquí podrías procesar el evento
             response.put("status", "ok");
             response.put("message", "webhook recibido correctamente");
             return ResponseEntity.ok(response);
@@ -61,7 +53,7 @@ public class WompiWebhookController {
             e.printStackTrace();
             response.put("status", "error");
             response.put("message", "excepción controlada, revisa logs");
-            return ResponseEntity.ok(response); // <- responde 200 aún si hubo error
+            return ResponseEntity.ok(response);
         }
     }
 

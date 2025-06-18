@@ -1,4 +1,3 @@
-
 package com.mifinca.payment.entity;
 
 import jakarta.persistence.*;
@@ -7,8 +6,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "transaccion_pago")
 public class TransaccionPago {
-    
-     @Id
+
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -38,6 +37,9 @@ public class TransaccionPago {
 
     @Column(name = "fecha_actualizacion")
     private LocalDateTime fechaActualizacion;
+
+    @Column(name = "timestamp_evento")
+    private Long timestampEvento;
 
     public Long getId() {
         return id;
@@ -118,6 +120,13 @@ public class TransaccionPago {
     public void setFechaActualizacion(LocalDateTime fechaActualizacion) {
         this.fechaActualizacion = fechaActualizacion;
     }
-    
-    
+
+    public Long getTimestampEvento() {
+        return timestampEvento;
+    }
+
+    public void setTimestampEvento(Long timestampEvento) {
+        this.timestampEvento = timestampEvento;
+    }
+
 }

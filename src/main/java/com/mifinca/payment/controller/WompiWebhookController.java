@@ -14,17 +14,18 @@ import java.util.Map;
 @RequestMapping("/webhook/wompi")
 public class WompiWebhookController {
 
-     private final SignatureVerifier signatureVerifier;
+    private final SignatureVerifier signatureVerifier;
 
     public WompiWebhookController(SignatureVerifier signatureVerifier) {
         this.signatureVerifier = signatureVerifier;
     }
 
     @PostMapping
-    public ResponseEntity<Map<String, String>> handleWebhook(HttpServletRequest request,
-                                                             @RequestHeader("x-signature") String xSignature) {
+    public ResponseEntity<Map<String, Object>> handleWebhook(HttpServletRequest request,
+            @RequestHeader("x-signature") String xSignature) {
+        Map<String, Object> response = new HashMap<>();
+
         try {
-            // Leer el cuerpo crudo
             StringBuilder rawBodyBuilder = new StringBuilder();
             BufferedReader reader = request.getReader();
             String line;
@@ -33,38 +34,35 @@ public class WompiWebhookController {
             }
             String rawBody = rawBodyBuilder.toString();
 
-            //Imprimir datos clave para depurar
             System.out.println("=== WEBHOOK RECIBIDO ===");
             System.out.println("Raw Body:");
             System.out.println(rawBody);
             System.out.println("Firma recibida:");
             System.out.println(xSignature);
 
-            // Calcular firma localmente
             String firmaCalculada = signatureVerifier.generateSignature(rawBody);
             System.out.println("Firma calculada:");
             System.out.println(firmaCalculada);
-            
-            // Validar firma
+
             boolean isValid = signatureVerifier.isValid(rawBody, xSignature);
             if (!isValid) {
-                Map<String, String> error = new HashMap<>();
-                error.put("status", "error");
-                error.put("message", "firma no válida");
-                return ResponseEntity.badRequest().body(error);
+                response.put("status", "error");
+                response.put("message", "firma no válida");
+                // Siempre responder 200 para evitar errores en Wompi
+                return ResponseEntity.ok(response);
             }
 
-            // Si es válida, responder
-            Map<String, String> response = new HashMap<>();
+            // Aquí podrías procesar el evento (guardar en base de datos, etc.)
             response.put("status", "ok");
-            response.put("message", "webhook recibido");
+            response.put("message", "webhook recibido correctamente");
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("status", "error");
-            error.put("message", "error interno");
-            return ResponseEntity.status(500).body(error);
+            e.printStackTrace();
+            response.put("status", "error");
+            response.put("message", "excepción controlada, revisa logs");
+            return ResponseEntity.ok(response); // <- responde 200 aún si hubo error
         }
     }
+
 }

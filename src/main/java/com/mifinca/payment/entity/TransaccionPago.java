@@ -11,7 +11,7 @@ public class TransaccionPago {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "id_transaccion_wompi", nullable = false, length = 100)
+    @Column(name = "id_transaccion_wompi", nullable = false, length = 100, unique = true)
     private String idTransaccionWompi;
 
     @Column(name = "monto_centavos", nullable = false)

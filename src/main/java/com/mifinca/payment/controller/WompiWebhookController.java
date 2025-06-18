@@ -1,5 +1,6 @@
 package com.mifinca.payment.controller;
 
+import com.mifinca.payment.service.TransaccionPagoService;
 import com.mifinca.payment.util.SignatureVerifier;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
@@ -15,9 +16,11 @@ import java.util.Map;
 public class WompiWebhookController {
 
     private final SignatureVerifier signatureVerifier;
+    private final TransaccionPagoService transaccionPagoService;
 
-    public WompiWebhookController(SignatureVerifier signatureVerifier) {
+    public WompiWebhookController(SignatureVerifier signatureVerifier, TransaccionPagoService transaccionPagoService) {
         this.signatureVerifier = signatureVerifier;
+        this.transaccionPagoService = transaccionPagoService;
     }
 
     @PostMapping
@@ -44,7 +47,10 @@ public class WompiWebhookController {
                 return ResponseEntity.ok(response);
             }
 
-            // Aquí podrías procesar el evento
+            // Llamar al servicio que guarda la transacción
+            transaccionPagoService.guardarDesdeEvento(rawBody);
+
+            // Aquí procesa y responde al evento
             response.put("status", "ok");
             response.put("message", "webhook recibido correctamente");
             return ResponseEntity.ok(response);

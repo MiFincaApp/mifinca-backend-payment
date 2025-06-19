@@ -3,7 +3,6 @@ package com.mifinca.payment.dto;
 public class TransaccionNequiRequest {
 
     private String celular;
-    private String referencia;
     private String correoCliente;
     private String acceptanceToken;
     private String personalToken;
@@ -15,14 +14,6 @@ public class TransaccionNequiRequest {
 
     public void setCelular(String celular) {
         this.celular = celular;
-    }
-
-    public String getReferencia() {
-        return referencia;
-    }
-
-    public void setReferencia(String referencia) {
-        this.referencia = referencia;
     }
 
     public String getCorreoCliente() {

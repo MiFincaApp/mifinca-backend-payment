@@ -4,10 +4,12 @@ public class TransaccionNequiResponse {
 
     private String idTransaccion;
     private String estado;
+    private String referencia;
 
-    public TransaccionNequiResponse(String idTransaccion, String estado) {
+    public TransaccionNequiResponse(String idTransaccion, String estado, String referencia) {
         this.idTransaccion = idTransaccion;
         this.estado = estado;
+        this.referencia = referencia;
     }
 
     public String getIdTransaccion() {
@@ -25,6 +27,13 @@ public class TransaccionNequiResponse {
     public void setEstado(String estado) {
         this.estado = estado;
     }
-    
-    
+
+    public String getReferencia() {
+        return referencia;
+    }
+
+    public void setReferencia(String referencia) {
+        this.referencia = referencia;
+    }
+
 }

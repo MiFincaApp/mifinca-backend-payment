@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mifinca.payment.dto.TransaccionNequiResponse;
 import com.mifinca.payment.entity.TransaccionPago;
 import com.mifinca.payment.repository.TransaccionPagoRepository;
+import com.mifinca.payment.util.ReferenciaPagoGenerator;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import org.springframework.beans.factory.annotation.Value;
@@ -94,7 +95,6 @@ public class TransaccionPagoService {
 
     public TransaccionNequiResponse crearTransaccionNequi(
             String celular,
-            String referencia,
             String correo,
             String acceptanceToken,
             String personalToken,
@@ -103,7 +103,11 @@ public class TransaccionPagoService {
         try {
             RestTemplate restTemplate = new RestTemplate();
 
+            // Generar referencia única ===
+            String referencia = ReferenciaPagoGenerator.generarReferenciaUnica("prueba-app-movil");
+
             // === 1. Calcular firma de integridad ===
+            //Formato: reference + amount_in_cents + currency + integrity_secret
             String rawString = referencia + montoEnCentavos + "COP" + integritySecret;
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(rawString.getBytes(StandardCharsets.UTF_8));
@@ -119,7 +123,7 @@ public class TransaccionPagoService {
             payload.put("acceptance_token", acceptanceToken);
             payload.put("payment_description", "Pago desde app móvil");
             payload.put("redirect_url", null);
-            payload.put("signature", firmaHex); // <== ✅ Aquí se incluye la firma
+            payload.put("signature", firmaHex); // <== Aquí se incluye la firma
 
             // === 3. Headers y solicitud ===
             HttpHeaders headers = new HttpHeaders();
@@ -150,11 +154,56 @@ public class TransaccionPagoService {
 
             repository.save(nueva);
 
-            return new TransaccionNequiResponse(nueva.getIdTransaccionWompi(), nueva.getEstado());
+            return new TransaccionNequiResponse(nueva.getIdTransaccionWompi(), nueva.getEstado(), nueva.getReferencia());
 
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Error al crear transacción NEQUI");
+        }
+    }
+
+    @Value("${wompi.verificar-url}")
+    private String verificarUrl; // ejemplo: https://sandbox.wompi.co/v1/transactions/
+
+    public TransaccionNequiResponse consultarEstadoTransaccion(String idTransaccion) {
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(wompiPrivateKey);
+            HttpEntity<Void> request = new HttpEntity<>(headers);
+
+            String url = verificarUrl + idTransaccion;
+
+            ResponseEntity<JsonNode> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    request,
+                    JsonNode.class
+            );
+
+            JsonNode data = response.getBody().path("data");
+            String estadoActual = data.path("status").asText();
+
+            String referencia = null;
+            
+            Optional<TransaccionPago> opt = repository.findByIdTransaccionWompi(idTransaccion);
+            if (opt.isPresent()) {
+                TransaccionPago tp = opt.get();
+                referencia = tp.getReferencia();
+
+                if (!tp.getEstado().equalsIgnoreCase(estadoActual)) {
+                    tp.setEstado(estadoActual);
+                    tp.setFechaActualizacion(LocalDateTime.now());
+                    repository.save(tp);
+                }
+            }
+
+            return new TransaccionNequiResponse(idTransaccion, estadoActual, referencia);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error al consultar estado de transacción");
         }
     }
 

@@ -49,13 +49,23 @@ public class WompiController {
             // Llamar al servicio
             TransaccionNequiResponse response = transaccionPagoService.crearTransaccionNequi(
                     dto.getCelular(),
-                    dto.getReferencia(),
                     dto.getCorreoCliente(),
                     dto.getAcceptanceToken(),
                     dto.getPersonalToken(),
                     montoEnCentavos
             );
 
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(null);
+        }
+    }
+
+    @GetMapping("/transaccion/{id}")
+    public ResponseEntity<TransaccionNequiResponse> consultarEstadoTransaccion(@PathVariable("id") String idTransaccion) {
+        try {
+            TransaccionNequiResponse response = transaccionPagoService.consultarEstadoTransaccion(idTransaccion);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             e.printStackTrace();

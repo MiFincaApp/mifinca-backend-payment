@@ -2,6 +2,7 @@ package com.mifinca.payment.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mifinca.payment.dto.TransaccionNequiRequest;
 import com.mifinca.payment.dto.TransaccionNequiResponse;
 import com.mifinca.payment.entity.TransaccionPago;
 import com.mifinca.payment.repository.TransaccionPagoRepository;
@@ -93,27 +94,33 @@ public class TransaccionPagoService {
     @Value("${wompi.integrity-secret}")
     private String integritySecret;
 
-    public TransaccionNequiResponse crearTransaccionNequi(
-            String celular,
-            String correo,
-            String acceptanceToken,
-            String personalToken,
-            int montoEnCentavos
-    ) {
+    public TransaccionNequiResponse crearTransaccionNequi(TransaccionNequiRequest dto) {
         try {
             RestTemplate restTemplate = new RestTemplate();
 
-            // Generar referencia única ===
+            // === Extraer datos del DTO ===
+            String celular = dto.getCelular();
+            String correo = dto.getCorreoCliente();
+            int montoEnCentavos = dto.getMonto_en_centavos();
+            String acceptanceToken = dto.getAcceptanceToken();
+            String personalToken = dto.getPersonalToken();
+            String nombre = dto.getNombreCompleto();
+            String tipoDoc = dto.getTipoDocumento();
+            String numeroDoc = dto.getNumeroDocumento();
+            String direccion = dto.getDireccion();
+            String ciudad = dto.getCiudad();
+            String departamento = dto.getDepartamento();
+
+            // === Generar referencia única ===
             String referencia = ReferenciaPagoGenerator.generarReferenciaUnica("prueba-app-movil");
 
-            // === 1. Calcular firma de integridad ===
-            //Formato: reference + amount_in_cents + currency + integrity_secret
+            // === Calcular firma de integridad ===
             String rawString = referencia + montoEnCentavos + "COP" + integritySecret;
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(rawString.getBytes(StandardCharsets.UTF_8));
             String firmaHex = HexFormat.of().formatHex(hash);
 
-            // === 2. Construir el payload ===
+            // === Construir payload ===
             Map<String, Object> payload = new HashMap<>();
             payload.put("payment_method", Map.of("type", "NEQUI", "phone_number", celular));
             payload.put("amount_in_cents", montoEnCentavos);
@@ -123,9 +130,8 @@ public class TransaccionPagoService {
             payload.put("acceptance_token", acceptanceToken);
             payload.put("payment_description", "Pago desde app móvil");
             payload.put("redirect_url", null);
-            payload.put("signature", firmaHex); // <== Aquí se incluye la firma
+            payload.put("signature", firmaHex);
 
-            // === 3. Headers y solicitud ===
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(wompiPrivateKey);
@@ -138,9 +144,9 @@ public class TransaccionPagoService {
                     JsonNode.class
             );
 
-            // === 4. Procesar respuesta y guardar en BD ===
             JsonNode data = response.getBody().path("data");
 
+            // === Guardar en base de datos ===
             TransaccionPago nueva = new TransaccionPago();
             nueva.setIdTransaccionWompi(data.path("id").asText());
             nueva.setMontoCentavos(data.path("amount_in_cents").asInt());
@@ -151,6 +157,14 @@ public class TransaccionPagoService {
             nueva.setCorreoCliente(correo);
             nueva.setFechaCreacion(LocalDateTime.now());
             nueva.setFechaActualizacion(LocalDateTime.now());
+
+            // Nuevos campos personales
+            nueva.setNombreCompleto(nombre);
+            nueva.setTipoDocumento(tipoDoc);
+            nueva.setNumeroDocumento(numeroDoc);
+            nueva.setDireccion(direccion);
+            nueva.setCiudad(ciudad);
+            nueva.setDepartamento(departamento);
 
             repository.save(nueva);
 
@@ -186,7 +200,7 @@ public class TransaccionPagoService {
             String estadoActual = data.path("status").asText();
 
             String referencia = null;
-            
+
             Optional<TransaccionPago> opt = repository.findByIdTransaccionWompi(idTransaccion);
             if (opt.isPresent()) {
                 TransaccionPago tp = opt.get();

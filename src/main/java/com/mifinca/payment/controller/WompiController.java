@@ -34,27 +34,11 @@ public class WompiController {
     }
 
     @PostMapping("/transaccion/nequi")
-    public ResponseEntity<TransaccionNequiResponse> crearTransaccionNequi(HttpServletRequest request) {
+    public ResponseEntity<TransaccionNequiResponse> crearTransaccionNequi(
+            @RequestBody TransaccionNequiRequest dto
+    ) {
         try {
-            // Leer el cuerpo crudo
-            String rawBody = new String(request.getInputStream().readAllBytes());
-
-            // Parsear a DTO
-            ObjectMapper mapper = new ObjectMapper();
-            TransaccionNequiRequest dto = mapper.readValue(rawBody, TransaccionNequiRequest.class);
-
-            // Convertir el monto a int
-            int montoEnCentavos = dto.getMonto_en_centavos();
-
-            // Llamar al servicio
-            TransaccionNequiResponse response = transaccionPagoService.crearTransaccionNequi(
-                    dto.getCelular(),
-                    dto.getCorreoCliente(),
-                    dto.getAcceptanceToken(),
-                    dto.getPersonalToken(),
-                    montoEnCentavos
-            );
-
+            TransaccionNequiResponse response = transaccionPagoService.crearTransaccionNequi(dto);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             e.printStackTrace();

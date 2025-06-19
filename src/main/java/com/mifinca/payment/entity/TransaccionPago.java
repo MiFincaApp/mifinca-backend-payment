@@ -41,6 +41,24 @@ public class TransaccionPago {
     @Column(name = "timestamp_evento")
     private Long timestampEvento;
 
+    @Column(name = "nombre_completo")
+    private String nombreCompleto;
+
+    @Column(name = "tipo_documento")
+    private String tipoDocumento;
+
+    @Column(name = "numero_documento")
+    private String numeroDocumento;
+
+    @Column(name = "direccion")
+    private String direccion;
+
+    @Column(name = "ciudad")
+    private String ciudad;
+
+    @Column(name = "departamento")
+    private String departamento;
+
     public Long getId() {
         return id;
     }
@@ -129,4 +147,53 @@ public class TransaccionPago {
         this.timestampEvento = timestampEvento;
     }
 
+    public String getNombreCompleto() {
+        return nombreCompleto;
+    }
+
+    public void setNombreCompleto(String nombreCompleto) {
+        this.nombreCompleto = nombreCompleto;
+    }
+
+    public String getTipoDocumento() {
+        return tipoDocumento;
+    }
+
+    public void setTipoDocumento(String tipoDocumento) {
+        this.tipoDocumento = tipoDocumento;
+    }
+
+    public String getNumeroDocumento() {
+        return numeroDocumento;
+    }
+
+    public void setNumeroDocumento(String numeroDocumento) {
+        this.numeroDocumento = numeroDocumento;
+    }
+
+    public String getDireccion() {
+        return direccion;
+    }
+
+    public void setDireccion(String direccion) {
+        this.direccion = direccion;
+    }
+
+    public String getCiudad() {
+        return ciudad;
+    }
+
+    public void setCiudad(String ciudad) {
+        this.ciudad = ciudad;
+    }
+
+    public String getDepartamento() {
+        return departamento;
+    }
+
+    public void setDepartamento(String departamento) {
+        this.departamento = departamento;
+    }
+
+    
 }

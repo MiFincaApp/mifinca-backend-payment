@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mifinca.payment.dto.TransaccionNequiResponse;
 import com.mifinca.payment.entity.TransaccionPago;
 import com.mifinca.payment.repository.TransaccionPagoRepository;
+import java.nio.charset.StandardCharsets;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.http.*;
@@ -12,8 +13,11 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.Map;
 import java.util.Optional;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 @Service
 public class TransaccionPagoService {
@@ -90,21 +94,34 @@ public class TransaccionPagoService {
             String correo,
             String acceptanceToken,
             String personalToken,
-            int montoEnCentavos // ← nuevo parámetro
+            int montoEnCentavos
     ) {
         try {
             RestTemplate restTemplate = new RestTemplate();
 
+            // === 1. Calcular firma de integridad ===
+            String mensajeAFirmar = montoEnCentavos + "COP" + referencia;
+
+            Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secretKey = new SecretKeySpec(wompiPrivateKey.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+            sha256_HMAC.init(secretKey);
+
+            byte[] hash = sha256_HMAC.doFinal(mensajeAFirmar.getBytes(StandardCharsets.UTF_8));
+            String firmaHex = HexFormat.of().formatHex(hash); // Desde Java 17, para versiones previas usa otro método.
+
+            // === 2. Construir el payload ===
             Map<String, Object> payload = new HashMap<>();
             payload.put("payment_method", Map.of("type", "NEQUI", "phone_number", celular));
-            payload.put("amount_in_cents", montoEnCentavos); // ← usa el valor recibido
+            payload.put("amount_in_cents", montoEnCentavos);
             payload.put("currency", "COP");
             payload.put("customer_email", correo);
             payload.put("reference", referencia);
             payload.put("acceptance_token", acceptanceToken);
             payload.put("payment_description", "Pago desde app móvil");
             payload.put("redirect_url", null);
+            payload.put("signature", firmaHex); // <== ✅ Aquí se incluye la firma
 
+            // === 3. Headers y solicitud ===
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(wompiPrivateKey);
@@ -112,14 +129,17 @@ public class TransaccionPagoService {
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
 
             ResponseEntity<JsonNode> response = restTemplate.postForEntity(
-                    "https://sandbox.wompi.co/v1/transactions", request, JsonNode.class
+                    "https://sandbox.wompi.co/v1/transactions",
+                    request,
+                    JsonNode.class
             );
 
+            // === 4. Procesar respuesta y guardar en BD ===
             JsonNode data = response.getBody().path("data");
 
             TransaccionPago nueva = new TransaccionPago();
             nueva.setIdTransaccionWompi(data.path("id").asText());
-            nueva.setMontoCentavos(montoEnCentavos);
+            nueva.setMontoCentavos(data.path("amount_in_cents").asInt());
             nueva.setMoneda(data.path("currency").asText());
             nueva.setEstado(data.path("status").asText());
             nueva.setMetodoPago("NEQUI");

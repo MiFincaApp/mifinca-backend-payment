@@ -144,7 +144,7 @@ public class TransaccionPagoService {
             // shipping_address (opcional, pero útil para reportes)
             Map<String, Object> shippingAddress = new HashMap<>();
             shippingAddress.put("address_line_1", direccion);
-            shippingAddress.put("address_line_2", "N/A");
+            shippingAddress.put("address_line_2", "NoAplica");
             shippingAddress.put("country", "CO");
             shippingAddress.put("city", ciudad);
             shippingAddress.put("region", departamento);

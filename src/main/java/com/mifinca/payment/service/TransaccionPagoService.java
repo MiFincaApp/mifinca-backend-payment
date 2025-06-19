@@ -6,6 +6,7 @@ import com.mifinca.payment.dto.TransaccionNequiResponse;
 import com.mifinca.payment.entity.TransaccionPago;
 import com.mifinca.payment.repository.TransaccionPagoRepository;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.http.*;
@@ -88,6 +89,9 @@ public class TransaccionPagoService {
         }
     }
 
+    @Value("${wompi.integrity-secret}")
+    private String integritySecret;
+
     public TransaccionNequiResponse crearTransaccionNequi(
             String celular,
             String referencia,
@@ -100,14 +104,10 @@ public class TransaccionPagoService {
             RestTemplate restTemplate = new RestTemplate();
 
             // === 1. Calcular firma de integridad ===
-            String mensajeAFirmar = montoEnCentavos + "COP" + referencia;
-
-            Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
-            SecretKeySpec secretKey = new SecretKeySpec(wompiPrivateKey.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-            sha256_HMAC.init(secretKey);
-
-            byte[] hash = sha256_HMAC.doFinal(mensajeAFirmar.getBytes(StandardCharsets.UTF_8));
-            String firmaHex = HexFormat.of().formatHex(hash); // Desde Java 17, para versiones previas usa otro método.
+            String rawString = referencia + montoEnCentavos + "COP" + integritySecret;
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(rawString.getBytes(StandardCharsets.UTF_8));
+            String firmaHex = HexFormat.of().formatHex(hash);
 
             // === 2. Construir el payload ===
             Map<String, Object> payload = new HashMap<>();

@@ -132,6 +132,27 @@ public class TransaccionPagoService {
             payload.put("redirect_url", null);
             payload.put("signature", firmaHex);
 
+            // customer_data (para dashboard de Wompi)
+            Map<String, Object> customerData = new HashMap<>();
+            customerData.put("full_name", nombre);
+            customerData.put("phone_number", celular);
+            customerData.put("phone_number_prefix", "+57");
+            customerData.put("legal_id", numeroDoc);
+            customerData.put("legal_id_type", tipoDoc);
+            payload.put("customer_data", customerData);
+
+            // shipping_address (opcional, pero útil para reportes)
+            Map<String, Object> shippingAddress = new HashMap<>();
+            shippingAddress.put("address_line_1", direccion);
+            shippingAddress.put("address_line_2", "");
+            shippingAddress.put("country", "CO");
+            shippingAddress.put("city", ciudad);
+            shippingAddress.put("region", departamento);
+            shippingAddress.put("phone_number", celular);
+            shippingAddress.put("name", nombre);
+            payload.put("shipping_address", shippingAddress);
+
+            // === Enviar solicitud a Wompi ===
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(wompiPrivateKey);

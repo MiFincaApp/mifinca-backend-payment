@@ -7,6 +7,7 @@ public class TransaccionNequiRequest {
     private String correoCliente;
     private String acceptanceToken;
     private String personalToken;
+    private int monto_en_centavos;
 
     public String getCelular() {
         return celular;
@@ -47,5 +48,14 @@ public class TransaccionNequiRequest {
     public void setPersonalToken(String personalToken) {
         this.personalToken = personalToken;
     }
+
+    public int getMonto_en_centavos() {
+        return monto_en_centavos;
+    }
+
+    public void setMonto_en_centavos(int monto_en_centavos) {
+        this.monto_en_centavos = monto_en_centavos;
+    }
+    
     
 }

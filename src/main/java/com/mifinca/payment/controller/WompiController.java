@@ -43,12 +43,17 @@ public class WompiController {
             ObjectMapper mapper = new ObjectMapper();
             TransaccionNequiRequest dto = mapper.readValue(rawBody, TransaccionNequiRequest.class);
 
+            // Convertir el monto a int
+            int montoEnCentavos = dto.getMonto_en_centavos();
+
+            // Llamar al servicio
             TransaccionNequiResponse response = transaccionPagoService.crearTransaccionNequi(
                     dto.getCelular(),
                     dto.getReferencia(),
                     dto.getCorreoCliente(),
                     dto.getAcceptanceToken(),
-                    dto.getPersonalToken()
+                    dto.getPersonalToken(),
+                    montoEnCentavos
             );
 
             return ResponseEntity.ok(response);

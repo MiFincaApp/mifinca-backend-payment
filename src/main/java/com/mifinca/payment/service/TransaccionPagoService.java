@@ -84,13 +84,20 @@ public class TransaccionPagoService {
         }
     }
 
-    public TransaccionNequiResponse crearTransaccionNequi(String celular, String referencia, String correo, String acceptanceToken, String personalToken) {
+    public TransaccionNequiResponse crearTransaccionNequi(
+            String celular,
+            String referencia,
+            String correo,
+            String acceptanceToken,
+            String personalToken,
+            int montoEnCentavos // ← nuevo parámetro
+    ) {
         try {
             RestTemplate restTemplate = new RestTemplate();
 
             Map<String, Object> payload = new HashMap<>();
             payload.put("payment_method", Map.of("type", "NEQUI", "phone_number", celular));
-            payload.put("amount_in_cents", 50000); // Puedes cambiar esto según tu lógica
+            payload.put("amount_in_cents", montoEnCentavos); // ← usa el valor recibido
             payload.put("currency", "COP");
             payload.put("customer_email", correo);
             payload.put("reference", referencia);
@@ -100,7 +107,7 @@ public class TransaccionPagoService {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBearerAuth(wompiPrivateKey); // Usar @Value inyectado, no System.getenv
+            headers.setBearerAuth(wompiPrivateKey);
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
 
@@ -112,7 +119,7 @@ public class TransaccionPagoService {
 
             TransaccionPago nueva = new TransaccionPago();
             nueva.setIdTransaccionWompi(data.path("id").asText());
-            nueva.setMontoCentavos(data.path("amount_in_cents").asInt());
+            nueva.setMontoCentavos(montoEnCentavos);
             nueva.setMoneda(data.path("currency").asText());
             nueva.setEstado(data.path("status").asText());
             nueva.setMetodoPago("NEQUI");
@@ -130,4 +137,5 @@ public class TransaccionPagoService {
             throw new RuntimeException("Error al crear transacción NEQUI");
         }
     }
+
 }

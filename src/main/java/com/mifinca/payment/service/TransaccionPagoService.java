@@ -95,7 +95,6 @@ public class TransaccionPagoService {
             payload.put("customer_email", correo);
             payload.put("reference", referencia);
             payload.put("acceptance_token", acceptanceToken);
-            payload.put("payment_source_id", null);
             payload.put("payment_description", "Pago desde app móvil");
             payload.put("redirect_url", null);
 

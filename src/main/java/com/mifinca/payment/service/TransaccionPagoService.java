@@ -160,7 +160,7 @@ public class TransaccionPagoService {
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
 
             ResponseEntity<JsonNode> response = restTemplate.postForEntity(
-                    "https://sandbox.wompi.co/v1/transactions",
+                    "https://production.wompi.co/v1/transactions",
                     request,
                     JsonNode.class
             );
@@ -198,7 +198,7 @@ public class TransaccionPagoService {
     }
 
     @Value("${wompi.verificar-url}")
-    private String verificarUrl; // ejemplo: https://sandbox.wompi.co/v1/transactions/
+    private String verificarUrl; // ejemplo: https://production.wompi.co/v1/transactions/
 
     public TransaccionNequiResponse consultarEstadoTransaccion(String idTransaccion) {
         try {

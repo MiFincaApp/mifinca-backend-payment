@@ -17,7 +17,7 @@ public class WompiService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public TokensAceptacionDTO obtenerTokensDeAceptacion() throws Exception {
-        String url = "https://sandbox.wompi.co/v1/merchants/" + publicKey;
+        String url = "https://production.wompi.co/v1/merchants/" + publicKey;
 
         String json = restTemplate.getForObject(url, String.class);
         JsonNode root = objectMapper.readTree(json);
